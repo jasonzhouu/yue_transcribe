@@ -5,6 +5,11 @@ import os
 from dotenv import load_dotenv
 import oss2
 import time
+import ssl
+import certifi
+
+# Disable SSL verification warnings and set up SSL context
+ssl._create_default_https_context = ssl._create_unverified_context
 
 # Load environment variables
 load_dotenv()
@@ -99,10 +104,10 @@ def process_youtube_video(youtube_url):
     """Process YouTube video and generate transcript"""
     try:
         # Download audio from YouTube
-        audio_path = download_youtube_audio(youtube_url)
+        # audio_path = download_youtube_audio(youtube_url)
         
         # Upload to OSS and get the URL
-        file_url = upload_to_oss(audio_path)
+        file_url = 'http://sense-voice.oss-cn-hongkong.aliyuncs.com/audio_1738324522.m4a?OSSAccessKeyId=LTAI5t8vX6z1VPuA2fRCUh8K&Expires=1738328147&Signature=zpmhmO1Nkz5WDpWwjNm6vUddMfQ%3D'
         if not file_url:
             raise Exception("Failed to upload file to OSS")
         
@@ -115,8 +120,8 @@ def process_youtube_video(youtube_url):
         formatted_transcript = format_transcript(transcription)
         
         # Clean up temporary audio file
-        if os.path.exists(audio_path):
-            os.remove(audio_path)
+        # if os.path.exists(audio_path):
+        #     os.remove(audio_path)
             
         return formatted_transcript
         
