@@ -185,7 +185,7 @@ def embed_subtitles(source_video_path: str, srt_path: str, file_hash: str) -> Op
         # Get the extension from the original video
         video_ext = os.path.splitext(source_video_path)[1]
         # Determine output path using file hash and original video extension
-        output_video = os.path.join('temp', f'output_{file_hash}{video_ext}')
+        output_video = os.path.join('temp', f'azure_output_{file_hash}{video_ext}')
         
         # Check if output file already exists
         if os.path.exists(output_video):
@@ -258,7 +258,8 @@ def process_youtube_video(youtube_url: str) -> Optional[str]:
         return None
 
 if __name__ == "__main__":
-    youtube_url = input("Enter YouTube URL: ")
+    # youtube_url = input("Enter YouTube URL: ")
+    youtube_url = "https://youtu.be/l2JAsuVG_8c"  # Replace with your YouTube URL
     if youtube_url.strip():
         output_video = process_youtube_video(youtube_url)
         print('Output video:', output_video)
