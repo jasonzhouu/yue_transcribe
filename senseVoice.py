@@ -35,6 +35,18 @@ def download_youtube_audio(youtube_url, output_path="temp_audio.m4a"):
         ydl.download([youtube_url])
     return output_path  # Simply return the output path since we're using .m4a consistently
 
+def download_youtube_video(youtube_url):
+    """Download video with audio from YouTube"""
+    ydl_opts = {
+        'format': 'best',  # Download best quality video with audio
+        'outtmpl': 'temp_video.%(ext)s',
+        'nocheckcertificate': True,
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(youtube_url, download=True)
+        video_path = ydl.prepare_filename(info)
+    return video_path
+
 def transcribe_with_timestamps(audio_url):
     """Transcribe audio with timing information using DashScope"""
     try:
@@ -163,14 +175,7 @@ def process_youtube_video(youtube_url):
         audio_path = download_youtube_audio(youtube_url)
         
         # Download video with audio
-        ydl_opts = {
-            'format': 'best',  # Download best quality video with audio
-            'outtmpl': 'temp_video.%(ext)s',
-            'nocheckcertificate': True,
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(youtube_url, download=True)
-            video_path = ydl.prepare_filename(info)
+        video_path = download_youtube_video(youtube_url)
         
         # Upload audio to OSS and get the URL
         file_url = upload_to_oss(audio_path)
