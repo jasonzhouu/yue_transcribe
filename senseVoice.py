@@ -7,6 +7,10 @@ import oss2
 import time
 import ssl
 import certifi
+import requests
+import json
+import subprocess
+import re
 
 # Disable SSL verification warnings and set up SSL context
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -100,13 +104,89 @@ def upload_to_oss(local_file_path):
         print(f"Error uploading to OSS: {str(e)}")
         return None
 
+def clean_text(text):
+    """Clean text by removing speech and emotion markers"""
+    # Remove speech markers
+    text = text.replace('<|Speech|>', '').replace('<|/Speech|>', '')
+    # Remove emotion tags (any text between <| and |>)
+    text = re.sub(r'<\|[^|]+\|>', '', text)
+    return text.strip()
+
+def download_transcript(transcript_url):
+    """Download and parse transcript JSON file from URL"""
+    try:
+        response = requests.get(transcript_url)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Handle the specific transcript format
+        if 'transcripts' in data:
+            return {
+                'text': clean_text(data['transcripts'].get('text', '')),
+                'sentences': [
+                    {
+                        'start_time': sentence.get('begin_time', 0) / 1000.0,  # Convert ms to seconds
+                        'end_time': sentence.get('end_time', 0) / 1000.0,      # Convert ms to seconds
+                        'text': clean_text(sentence.get('text', ''))
+                    }
+                    for sentence in data['transcripts'].get('sentences', [])
+                ]
+            }
+        return None
+    except Exception as e:
+        print(f"Error downloading transcript: {str(e)}")
+        return None
+
+def create_srt_from_transcript(transcript_data):
+    """Convert transcript data to SRT format"""
+    srt_content = []
+    counter = 1
+    
+    for sentence in transcript_data.get('sentences', []):
+        start_time = float(sentence.get('start_time', 0))  # Already in seconds from download_transcript
+        end_time = float(sentence.get('end_time', 0))      # Already in seconds from download_transcript
+        text = sentence.get('text', '')
+        
+        # Convert seconds to SRT time format (HH:MM:SS,mmm)
+        start_formatted = f"{int(start_time//3600):02d}:{int((start_time%3600)//60):02d}:{int(start_time%60):02d},{int((start_time*1000)%1000):03d}"
+        end_formatted = f"{int(end_time//3600):02d}:{int((end_time%3600)//60):02d}:{int(end_time%60):02d},{int((end_time*1000)%1000):03d}"
+        
+        srt_entry = f"{counter}\n{start_formatted} --> {end_formatted}\n{text}\n\n"
+        srt_content.append(srt_entry)
+        counter += 1
+    
+    return ''.join(srt_content)
+
+def embed_subtitles(video_path, srt_path, output_path):
+    """Embed SRT subtitles into video file"""
+    try:
+        cmd = [
+            'ffmpeg', '-i', video_path,
+            '-i', srt_path,
+            '-c', 'copy',
+            '-c:s', 'mov_text',
+            output_path
+        ]
+        subprocess.run(cmd, check=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error embedding subtitles: {str(e)}")
+        return False
+
 def process_youtube_video(youtube_url):
     """Process YouTube video and generate transcript"""
     try:
-        # Download audio from YouTube
-        # audio_path = download_youtube_audio(youtube_url)
+        # Download video with audio
+        ydl_opts = {
+            'format': 'best',  # Download best quality video with audio
+            'outtmpl': 'temp_video.%(ext)s',
+            'nocheckcertificate': True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(youtube_url, download=True)
+            video_path = ydl.prepare_filename(info)
         
-        # Upload to OSS and get the URL
+        # Upload audio to OSS and get the URL
         file_url = 'http://sense-voice.oss-cn-hongkong.aliyuncs.com/audio_1738324522.m4a?OSSAccessKeyId=LTAI5t8vX6z1VPuA2fRCUh8K&Expires=1738328147&Signature=zpmhmO1Nkz5WDpWwjNm6vUddMfQ%3D'
         if not file_url:
             raise Exception("Failed to upload file to OSS")
@@ -115,15 +195,32 @@ def process_youtube_video(youtube_url):
         
         # Transcribe with timestamps
         transcription_url = transcribe_with_timestamps(file_url)
-        
-        # Format the transcript
-        formatted_transcript = format_transcript(transcription_url)
-        
-        # Clean up temporary audio file
-        # if os.path.exists(audio_path):
-        #     os.remove(audio_path)
+        if not transcription_url:
+            raise Exception("Failed to get transcription URL")
             
-        return formatted_transcript
+        # Download and parse transcript
+        transcript_data = download_transcript(transcription_url)
+        if not transcript_data:
+            raise Exception("Failed to download transcript")
+            
+        # Create SRT file
+        srt_content = create_srt_from_transcript(transcript_data)
+        srt_path = 'temp_subtitles.srt'
+        with open(srt_path, 'w', encoding='utf-8') as f:
+            f.write(srt_content)
+            
+        # Embed subtitles into video
+        output_path = 'output_video_with_subtitles.' + video_path.split('.')[-1]
+        if not embed_subtitles(video_path, srt_path, output_path):
+            raise Exception("Failed to embed subtitles")
+            
+        # Clean up temporary files
+        for temp_file in [srt_path]:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+                
+        print(f"Video with subtitles saved as: {output_path}")
+        return transcript_data
         
     except Exception as e:
         print(f"Error processing video: {str(e)}")
