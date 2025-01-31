@@ -74,7 +74,7 @@ def download_youtube_video(youtube_url, file_hash):
 def transcribe_with_timestamps(audio_url, file_hash):
     """Transcribe audio with timing information using DashScope"""
     try:
-        transcript_file = os.path.join('temp', f'{file_hash}_transcript_raw.json')
+        transcript_file = os.path.join('temp', f'{file_hash}_transcript_raw_sense_voice.json')
         
         # Check if transcript file already exists
         if os.path.exists(transcript_file):
