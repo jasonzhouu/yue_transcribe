@@ -27,10 +27,8 @@ def get_video_hash(youtube_url):
     """Generate a hash from YouTube URL"""
     return hashlib.md5(youtube_url.encode()).hexdigest()
 
-def download_youtube_audio(youtube_url):
+def download_youtube_audio(youtube_url, file_hash):
     """Download audio from YouTube video"""
-    # Generate hash for filename
-    file_hash = get_video_hash(youtube_url)
     output_path = os.path.join('temp', f"{file_hash}.m4a")
     
     # Check if file already exists
@@ -52,10 +50,8 @@ def download_youtube_audio(youtube_url):
         ydl.download([youtube_url])
     return output_path
 
-def download_youtube_video(youtube_url):
+def download_youtube_video(youtube_url, file_hash):
     """Download video with audio from YouTube"""
-    # Generate hash for filename
-    file_hash = get_video_hash(youtube_url)
     output_template = os.path.join('temp', f"{file_hash}.%(ext)s")
     
     # Try to find existing video file
@@ -238,10 +234,10 @@ def process_youtube_video(youtube_url):
         file_hash = get_video_hash(youtube_url)
         
         # Download audio from YouTube
-        audio_path = download_youtube_audio(youtube_url)
+        audio_path = download_youtube_audio(youtube_url, file_hash)
         
         # Download video with audio
-        video_path = download_youtube_video(youtube_url)
+        video_path = download_youtube_video(youtube_url, file_hash)
         
         # Upload audio to OSS and get the URL
         audio_oss_url = upload_to_oss(audio_path)
