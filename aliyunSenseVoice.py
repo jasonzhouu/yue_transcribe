@@ -161,14 +161,14 @@ def parse_transcription_file(transcript_file):
         # Handle the specific transcript format
         if 'transcripts' in data:
             return {
-                'text': clean_text(data['transcripts'].get('text', '')),
+                'text': clean_text(data['transcripts'][0].get('text', '')),
                 'sentences': [
                     {
                         'start_time': sentence.get('begin_time', 0) / 1000.0,  # Convert ms to seconds
                         'end_time': sentence.get('end_time', 0) / 1000.0,      # Convert ms to seconds
                         'text': clean_text(sentence.get('text', ''))
                     }
-                    for sentence in data['transcripts'].get('sentences', [])
+                    for sentence in data['transcripts'][0].get('sentences', [])
                 ]
             }
         return None
@@ -269,7 +269,7 @@ def process_youtube_video(youtube_url):
                 
         print(f"Video with subtitles saved as: {output_video}")
         print(f"Transcript saved as: {transcription_file}")
-        return transcript_data
+        return output_video
         
     except Exception as e:
         print(f"Error processing video: {str(e)}")
@@ -277,9 +277,5 @@ def process_youtube_video(youtube_url):
 
 if __name__ == "__main__":
     youtube_url = "https://youtu.be/l2JAsuVG_8c"  # Replace with your YouTube URL
-    transcript = process_youtube_video(youtube_url)
-    
-    if transcript:
-        print("Transcription with timestamps:")
-        for segment in transcript:
-            print(f"{segment['timestamp']}: {segment['text']}")
+    output_video = process_youtube_video(youtube_url)
+    print('output video: ', output_video)
