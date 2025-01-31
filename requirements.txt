@@ -1,0 +1,9 @@
+openai
+python-dotenv
+pyaudio
+numpy
+openai-whisper
+sensevoice-onnx
+yt-dlp
+dashscope>=1.10.0
+oss2

@@ -1,0 +1,5 @@
+.conda
+.env
+*.wav
+*.m4a
+.idea
