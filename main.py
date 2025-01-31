@@ -12,8 +12,8 @@ load_dotenv()
 
 # 配置 Qwen AI API
 client = OpenAI(
-    api_key=os.getenv("DASHSCOPE_API_KEY"),
-    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+    api_key=os.getenv("ALIYUN_BAILIAN_API_KEY"),
+    base_url=os.getenv("ALIYUN_BAILIAN_BASE_URL")
 )
 
 # 初始化 Whisper 语音识别模型（中等尺寸）

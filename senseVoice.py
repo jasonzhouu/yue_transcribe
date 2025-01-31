@@ -8,7 +8,7 @@ import time
 
 # Load environment variables
 load_dotenv()
-dashscope.api_key = os.getenv('DASHSCOPE_API_KEY')
+dashscope.api_key = os.getenv('ALIYUN_BAILIAN_API_KEY')
 
 def download_youtube_audio(youtube_url, output_path="temp_audio.m4a"):
     """Download audio from YouTube video"""
