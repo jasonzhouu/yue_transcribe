@@ -78,6 +78,15 @@ def download_youtube_video(youtube_url):
 def transcribe_with_timestamps(audio_url):
     """Transcribe audio with timing information using DashScope"""
     try:
+        # Extract hash from audio_url (which contains the hash in the filename)
+        file_hash = os.path.basename(audio_url).split('.')[0]
+        transcript_file = os.path.join('temp', f'{file_hash}_transcript_raw.json')
+        
+        # Check if transcript file already exists
+        if os.path.exists(transcript_file):
+            print(f"Transcript file already exists: {transcript_file}")
+            return transcript_file
+        
         # Create async transcription task
         task_response = dashscope.audio.asr.Transcription.async_call(
             model='sensevoice-v1',
@@ -91,7 +100,16 @@ def transcribe_with_timestamps(audio_url):
         )
         
         if transcribe_response.status_code == HTTPStatus.OK and transcribe_response.output.results[0].transcript_url and transcribe_response.output.results[0].subtask_status == 'SUCCEEDED':
-            return transcribe_response.output.results[0].transcript_url
+            # Download the transcript
+            transcript_url = transcribe_response.output.results[0].transcript_url
+            response = requests.get(transcript_url)
+            response.raise_for_status()
+            
+            # Save the transcript
+            with open(transcript_file, 'w', encoding='utf-8') as f:
+                json.dump(response.json(), f, ensure_ascii=False, indent=2)
+            
+            return transcript_file
         else:
             raise Exception(f"API Error: {transcribe_response.message}")
             
@@ -136,12 +154,11 @@ def clean_text(text):
     text = re.sub(r'<\|[^|]+\|>', '', text)
     return text.strip()
 
-def download_transcript(transcript_url):
-    """Download and parse transcript JSON file from URL"""
+def download_transcript(transcript_file):
+    """Read and parse transcript JSON file"""
     try:
-        response = requests.get(transcript_url)
-        response.raise_for_status()
-        data = response.json()
+        with open(transcript_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
         
         # Handle the specific transcript format
         if 'transcripts' in data:
@@ -158,7 +175,7 @@ def download_transcript(transcript_url):
             }
         return None
     except Exception as e:
-        print(f"Error downloading transcript: {str(e)}")
+        print(f"Error reading transcript: {str(e)}")
         return None
 
 def create_srt_from_transcript(transcript_data):
@@ -217,20 +234,15 @@ def process_youtube_video(youtube_url):
         print('file url:', file_url)
         
         # Transcribe with timestamps
-        transcription_url = transcribe_with_timestamps(file_url)
-        if not transcription_url:
-            raise Exception("Failed to get transcription URL")
+        transcription_file = transcribe_with_timestamps(file_url)
+        if not transcription_file:
+            raise Exception("Failed to get transcription file")
             
         # Download and parse transcript
-        transcript_data = download_transcript(transcription_url)
+        transcript_data = download_transcript(transcription_file)
         if not transcript_data:
             raise Exception("Failed to download transcript")
-            
-        # Save transcript data to a JSON file using just the hash
-        transcript_path = os.path.join('temp', f'{file_hash}.json')
-        with open(transcript_path, 'w', encoding='utf-8') as f:
-            json.dump(transcript_data, f, ensure_ascii=False, indent=2)
-            
+        
         # Create SRT file using hash
         srt_content = create_srt_from_transcript(transcript_data)
         srt_path = os.path.join('temp', f'{file_hash}.srt')
@@ -247,7 +259,7 @@ def process_youtube_video(youtube_url):
             os.remove(srt_path)
                 
         print(f"Video with subtitles saved as: {output_path}")
-        print(f"Transcript saved as: {transcript_path}")
+        print(f"Transcript saved as: {transcription_file}")
         return transcript_data
         
     except Exception as e:
