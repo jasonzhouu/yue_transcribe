@@ -227,14 +227,14 @@ def process_youtube_video(youtube_url):
         video_path = download_youtube_video(youtube_url)
         
         # Upload audio to OSS and get the URL
-        file_url = upload_to_oss(audio_path)
-        if not file_url:
+        audio_oss_url = upload_to_oss(audio_path)
+        if not audio_oss_url:
             raise Exception("Failed to upload file to OSS")
         
-        print('file url:', file_url)
+        print('audio oss url:', audio_oss_url)
         
         # Transcribe with timestamps
-        transcription_file = transcribe_with_timestamps(file_url)
+        transcription_file = transcribe_with_timestamps(audio_oss_url)
         if not transcription_file:
             raise Exception("Failed to get transcription file")
             
