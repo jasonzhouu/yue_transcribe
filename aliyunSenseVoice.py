@@ -160,7 +160,7 @@ def clean_text(text):
     text = re.sub(r'<\|[^|]+\|>', '', text)
     return text.strip()
 
-def download_transcript(transcript_file):
+def parse_transcription_file(transcript_file):
     """Read and parse transcript JSON file"""
     try:
         with open(transcript_file, 'r', encoding='utf-8') as f:
@@ -245,7 +245,7 @@ def process_youtube_video(youtube_url):
             raise Exception("Failed to get transcription file")
             
         # Download and parse transcript
-        transcript_data = download_transcript(transcription_file)
+        transcript_data = parse_transcription_file(transcription_file)
         if not transcript_data:
             raise Exception("Failed to download transcript")
         
