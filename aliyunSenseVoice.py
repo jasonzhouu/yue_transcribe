@@ -200,11 +200,11 @@ def create_srt_from_transcript(transcript_data):
     
     return ''.join(srt_content)
 
-def embed_subtitles(video_path, srt_path, file_hash):
+def embed_subtitles(source_video_path, srt_path, file_hash):
     """Embed SRT subtitles into video file"""
     try:
         # Get the extension from the original video
-        video_ext = os.path.splitext(video_path)[1]
+        video_ext = os.path.splitext(source_video_path)[1]
         # Determine output path using file hash and original video extension
         output_video = os.path.join('temp', f'{file_hash}{video_ext}')
         
@@ -215,7 +215,7 @@ def embed_subtitles(video_path, srt_path, file_hash):
             
         print(f"Embedding subtitles into video: {output_video}")
         cmd = [
-            'ffmpeg', '-i', video_path,
+            'ffmpeg', '-i', source_video_path,
             '-i', srt_path,
             '-c', 'copy',
             '-c:s', 'mov_text',
@@ -234,13 +234,13 @@ def process_youtube_video(youtube_url):
         file_hash = get_video_hash(youtube_url)
         
         # Download audio from YouTube
-        audio_path = download_youtube_audio(youtube_url, file_hash)
+        original_audio_path = download_youtube_audio(youtube_url, file_hash)
         
         # Download video with audio
-        video_path = download_youtube_video(youtube_url, file_hash)
+        original_video_path = download_youtube_video(youtube_url, file_hash)
         
         # Upload audio to OSS and get the URL
-        audio_oss_url = upload_to_oss(audio_path)
+        audio_oss_url = upload_to_oss(original_audio_path)
         if not audio_oss_url:
             raise Exception("Failed to upload file to OSS")
         
@@ -263,7 +263,7 @@ def process_youtube_video(youtube_url):
             f.write(srt_content)
             
         # Embed subtitles into video using file hash
-        output_video = embed_subtitles(video_path, srt_path, file_hash)
+        output_video = embed_subtitles(original_video_path, srt_path, file_hash)
         if not output_video:
             raise Exception("Failed to embed subtitles")
             
