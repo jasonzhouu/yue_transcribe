@@ -31,7 +31,7 @@ def download_youtube_audio(youtube_url):
     """Download audio from YouTube video"""
     # Generate hash for filename
     file_hash = get_video_hash(youtube_url)
-    output_path = os.path.join('temp', f"audio_{file_hash}.m4a")
+    output_path = os.path.join('temp', f"{file_hash}.m4a")
     
     # Check if file already exists
     if os.path.exists(output_path):
@@ -56,11 +56,11 @@ def download_youtube_video(youtube_url):
     """Download video with audio from YouTube"""
     # Generate hash for filename
     file_hash = get_video_hash(youtube_url)
-    output_template = os.path.join('temp', f"video_{file_hash}.%(ext)s")
+    output_template = os.path.join('temp', f"{file_hash}.%(ext)s")
     
     # Try to find existing video file
     for ext in ['mp4', 'mkv', 'webm']:
-        existing_file = os.path.join('temp', f"video_{file_hash}.{ext}")
+        existing_file = os.path.join('temp', f"{file_hash}.{ext}")
         if os.path.exists(existing_file):
             print(f"Video file already exists: {existing_file}")
             return existing_file
@@ -113,8 +113,9 @@ def upload_to_oss(local_file_path):
             os.getenv('OSS_BUCKET_NAME')
         )
         
-        # Generate a unique filename using timestamp
-        file_name = f"audio_{int(time.time())}.m4a"
+        # Get file hash from path
+        file_hash = os.path.basename(local_file_path).split('_')[-1].split('.')[0]
+        file_name = f"{file_hash}.m4a"
         
         # Upload the file
         bucket.put_object_from_file(file_name, local_file_path)
