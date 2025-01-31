@@ -1,6 +1,6 @@
 import pyaudio
 import numpy as np
-from openai import AzureOpenAI
+from openai import OpenAI
 import whisper
 import threading
 from queue import Queue
@@ -10,11 +10,10 @@ from dotenv import load_dotenv
 # 加载环境变量
 load_dotenv()
 
-# 配置 Azure OpenAI API
-client = AzureOpenAI(
-    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-    api_version="2024-05-01-preview",
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
+# 配置 Qwen AI API
+client = OpenAI(
+    api_key=os.getenv("DASHSCOPE_API_KEY"),
+    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
 )
 
 # 初始化 Whisper 语音识别模型（中等尺寸）
@@ -93,9 +92,9 @@ def transcribe_and_translate():
                 print('==',result["text"].strip())
                 
                 if result["text"].strip():  # 只处理非空文本
-                    # 使用 Azure GPT-4 进行方言转换
+                    # 使用 Qwen AI 进行方言转换
                     response = client.chat.completions.create(
-                        model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+                        model="qwen-max",
                         messages=[{
                             "role": "system",
                             "content": "你是一个专业的方言转换助手，请将用户输入的粤语口语文本转换为标准普通话书面文本，保持原意不变。"
