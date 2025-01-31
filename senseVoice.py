@@ -68,7 +68,7 @@ def format_transcript(transcription):
     return formatted_output
 
 def upload_to_oss(local_file_path):
-    """Upload file to Aliyun OSS and return the public URL"""
+    """Upload file to Aliyun OSS and return a signed URL valid for 1 hour"""
     try:
         # Initialize OSS client
         auth = oss2.Auth(
@@ -87,8 +87,8 @@ def upload_to_oss(local_file_path):
         # Upload the file
         bucket.put_object_from_file(file_name, local_file_path)
         
-        # Generate the public URL
-        file_url = f"https://{os.getenv('OSS_BUCKET_NAME')}.{os.getenv('OSS_ENDPOINT').replace('http://', '')}/{file_name}"
+        # Generate a signed URL that's valid for 1 hour (3600 seconds)
+        file_url = bucket.sign_url('GET', file_name, 3600)
         
         return file_url
     except Exception as e:
