@@ -17,7 +17,7 @@ client = OpenAI(
 )
 
 # 初始化 Whisper 语音识别模型（中等尺寸）
-model = whisper.load_model("medium")
+model = whisper.load_model("base")
 
 # 音频参数
 FORMAT = pyaudio.paInt16
@@ -87,28 +87,28 @@ def transcribe_and_translate():
                 # Whisper 语音识别
                 result = model.transcribe(
                     audio_np,
-                    language=os.getenv('TRANSCRIPTION_LANGUAGE', 'yue'),
+                    language=os.getenv('TRANSCRIPTION_LANGUAGE', 'zh'),
                     fp16=False
                 )
 
-                print('==',result["text"].strip())
+                print('==',result["text"])
 
-                if result["text"].strip():  # 只处理非空文本
-                    # 使用 Qwen AI 进行方言转换
-                    response = client.chat.completions.create(
-                        model="qwen-max",
-                        messages=[{
-                            "role": "system",
-                            "content": "你是一个专业的方言转换助手，请将用户输入的粤语口语文本转换为标准普通话书面文本，保持原意不变。"
-                        }, {
-                            "role": "user",
-                            "content": result["text"]
-                        }],
-                        temperature=0.3
-                    )
+                # if result["text"].strip():  # 只处理非空文本
+                #     # 使用 Qwen AI 进行方言转换
+                #     response = client.chat.completions.create(
+                #         model="qwen-max",
+                #         messages=[{
+                #             "role": "system",
+                #             "content": "你是一个专业的方言转换助手，请将用户输入的粤语口语文本转换为标准普通话书面文本，保持原意不变。"
+                #         }, {
+                #             "role": "user",
+                #             "content": result["text"]
+                #         }],
+                #         temperature=0.3
+                #     )
                     
-                    print(f"\n粤语原文: {result['text']}")
-                    print(f"普通话转换: {response.choices[0].message.content}")
+                #     print(f"\n粤语原文: {result['text']}")
+                #     print(f"普通话转换: {response.choices[0].message.content}")
             except Exception as e:
                 print(f"处理错误: {str(e)}")
 
