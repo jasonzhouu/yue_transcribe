@@ -56,7 +56,7 @@ def download_youtube_video(youtube_url, file_hash):
     
     # Try to find existing video file
     for ext in ['mp4', 'mkv', 'webm']:
-        existing_file = os.path.join('temp', f"{file_hash}.{ext}")
+        existing_file = os.path.join('temp', f"original_{file_hash}.{ext}")
         if os.path.exists(existing_file):
             print(f"Video file already exists: {existing_file}")
             return existing_file
@@ -113,7 +113,7 @@ def transcribe_with_timestamps(audio_url):
         print(f"Transcription error: {str(e)}")
         return None
 
-def upload_to_oss(local_file_path):
+def upload_to_oss(local_file_path, file_hash):
     """Upload file to Aliyun OSS and return a signed URL valid for 1 hour"""
     try:
         # Initialize OSS client
@@ -127,8 +127,6 @@ def upload_to_oss(local_file_path):
             os.getenv('OSS_BUCKET_NAME')
         )
         
-        # Get file hash from path
-        file_hash = os.path.basename(local_file_path).split('_')[-1].split('.')[0]
         file_name = f"{file_hash}.m4a"
         
         # Check if file already exists in OSS
@@ -240,7 +238,7 @@ def process_youtube_video(youtube_url):
         original_video_path = download_youtube_video(youtube_url, file_hash)
         
         # Upload audio to OSS and get the URL
-        audio_oss_url = upload_to_oss(original_audio_path)
+        audio_oss_url = upload_to_oss(original_audio_path, file_hash)
         if not audio_oss_url:
             raise Exception("Failed to upload file to OSS")
         
