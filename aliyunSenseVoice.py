@@ -204,21 +204,32 @@ def create_srt_from_transcript(transcript_data):
     
     return ''.join(srt_content)
 
-def embed_subtitles(video_path, srt_path, output_path):
+def embed_subtitles(video_path, srt_path, file_hash):
     """Embed SRT subtitles into video file"""
     try:
+        # Get the extension from the original video
+        video_ext = os.path.splitext(video_path)[1]
+        # Determine output path using file hash and original video extension
+        output_video = os.path.join('temp', f'{file_hash}{video_ext}')
+        
+        # Check if output file already exists
+        if os.path.exists(output_video):
+            print(f"Video with subtitles already exists: {output_video}")
+            return output_video
+            
+        print(f"Embedding subtitles into video: {output_video}")
         cmd = [
             'ffmpeg', '-i', video_path,
             '-i', srt_path,
             '-c', 'copy',
             '-c:s', 'mov_text',
-            output_path
+            output_video
         ]
         subprocess.run(cmd, check=True)
-        return True
+        return output_video
     except subprocess.CalledProcessError as e:
         print(f"Error embedding subtitles: {str(e)}")
-        return False
+        return None
 
 def process_youtube_video(youtube_url):
     """Process YouTube video and generate transcript"""
@@ -255,16 +266,16 @@ def process_youtube_video(youtube_url):
         with open(srt_path, 'w', encoding='utf-8') as f:
             f.write(srt_content)
             
-        # Embed subtitles into video using just the hash
-        output_path = os.path.join('temp', f'{file_hash}.{video_path.split(".")[-1]}')
-        if not embed_subtitles(video_path, srt_path, output_path):
+        # Embed subtitles into video using file hash
+        output_video = embed_subtitles(video_path, srt_path, file_hash)
+        if not output_video:
             raise Exception("Failed to embed subtitles")
             
         # Clean up temporary files
         if os.path.exists(srt_path):
             os.remove(srt_path)
                 
-        print(f"Video with subtitles saved as: {output_path}")
+        print(f"Video with subtitles saved as: {output_video}")
         print(f"Transcript saved as: {transcription_file}")
         return transcript_data
         
