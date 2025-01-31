@@ -29,7 +29,7 @@ def get_video_hash(youtube_url):
 
 def download_youtube_audio(youtube_url, file_hash):
     """Download audio from YouTube video"""
-    output_path = os.path.join('temp', f"{file_hash}.m4a")
+    output_path = os.path.join('temp', f"original_{file_hash}.m4a")
     
     # Check if file already exists
     if os.path.exists(output_path):
@@ -52,7 +52,7 @@ def download_youtube_audio(youtube_url, file_hash):
 
 def download_youtube_video(youtube_url, file_hash):
     """Download video with audio from YouTube"""
-    output_template = os.path.join('temp', f"{file_hash}.%(ext)s")
+    output_template = os.path.join('temp', f"original_{file_hash}.%(ext)s")
     
     # Try to find existing video file
     for ext in ['mp4', 'mkv', 'webm']:
@@ -206,7 +206,7 @@ def embed_subtitles(source_video_path, srt_path, file_hash):
         # Get the extension from the original video
         video_ext = os.path.splitext(source_video_path)[1]
         # Determine output path using file hash and original video extension
-        output_video = os.path.join('temp', f'{file_hash}{video_ext}')
+        output_video = os.path.join('temp', f'output_{file_hash}{video_ext}')
         
         # Check if output file already exists
         if os.path.exists(output_video):
