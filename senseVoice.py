@@ -59,23 +59,6 @@ def transcribe_with_timestamps(audio_url):
         print(f"Transcription error: {str(e)}")
         return None
 
-def format_transcript(transcription):
-    """Format transcript with timestamps and current word highlighting"""
-    formatted_output = []
-    if not transcription or 'sentences' not in transcription:
-        return formatted_output
-        
-    for sentence in transcription['sentences']:
-        start_time = sentence.get('start_time', 0)
-        end_time = sentence.get('end_time', 0)
-        text = sentence.get('text', '')
-        
-        formatted_output.append({
-            'timestamp': f"[{float(start_time):.2f}s - {float(end_time):.2f}s]",
-            'text': text
-        })
-    return formatted_output
-
 def upload_to_oss(local_file_path):
     """Upload file to Aliyun OSS and return a signed URL valid for 1 hour"""
     try:
@@ -176,6 +159,9 @@ def embed_subtitles(video_path, srt_path, output_path):
 def process_youtube_video(youtube_url):
     """Process YouTube video and generate transcript"""
     try:
+        # Download audio from YouTube
+        audio_path = download_youtube_audio(youtube_url)
+        
         # Download video with audio
         ydl_opts = {
             'format': 'best',  # Download best quality video with audio
@@ -187,7 +173,7 @@ def process_youtube_video(youtube_url):
             video_path = ydl.prepare_filename(info)
         
         # Upload audio to OSS and get the URL
-        file_url = 'http://sense-voice.oss-cn-hongkong.aliyuncs.com/audio_1738324522.m4a?OSSAccessKeyId=LTAI5t8vX6z1VPuA2fRCUh8K&Expires=1738328147&Signature=zpmhmO1Nkz5WDpWwjNm6vUddMfQ%3D'
+        file_url = upload_to_oss(audio_path)
         if not file_url:
             raise Exception("Failed to upload file to OSS")
         
