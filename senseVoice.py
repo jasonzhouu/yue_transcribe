@@ -11,6 +11,7 @@ import requests
 import json
 import subprocess
 import re
+import hashlib
 
 # Disable SSL verification warnings and set up SSL context
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -19,8 +20,21 @@ ssl._create_default_https_context = ssl._create_unverified_context
 load_dotenv()
 dashscope.api_key = os.getenv('ALIYUN_BAILIAN_API_KEY')
 
-def download_youtube_audio(youtube_url, output_path="temp_audio.m4a"):
+def get_video_hash(youtube_url):
+    """Generate a hash from YouTube URL"""
+    return hashlib.md5(youtube_url.encode()).hexdigest()
+
+def download_youtube_audio(youtube_url):
     """Download audio from YouTube video"""
+    # Generate hash for filename
+    file_hash = get_video_hash(youtube_url)
+    output_path = f"audio_{file_hash}.m4a"
+    
+    # Check if file already exists
+    if os.path.exists(output_path):
+        print(f"Audio file already exists: {output_path}")
+        return output_path
+    
     ydl_opts = {
         'format': 'm4a/bestaudio/best',
         'postprocessors': [{
@@ -33,13 +47,24 @@ def download_youtube_audio(youtube_url, output_path="temp_audio.m4a"):
     
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([youtube_url])
-    return output_path  # Simply return the output path since we're using .m4a consistently
+    return output_path
 
 def download_youtube_video(youtube_url):
     """Download video with audio from YouTube"""
+    # Generate hash for filename
+    file_hash = get_video_hash(youtube_url)
+    output_template = f"video_{file_hash}.%(ext)s"
+    
+    # Try to find existing video file
+    for ext in ['mp4', 'mkv', 'webm']:
+        existing_file = f"video_{file_hash}.{ext}"
+        if os.path.exists(existing_file):
+            print(f"Video file already exists: {existing_file}")
+            return existing_file
+    
     ydl_opts = {
-        'format': 'best',  # Download best quality video with audio
-        'outtmpl': 'temp_video.%(ext)s',
+        'format': 'best',
+        'outtmpl': output_template,
         'nocheckcertificate': True,
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
