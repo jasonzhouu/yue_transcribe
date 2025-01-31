@@ -135,8 +135,14 @@ def upload_to_oss(local_file_path):
         file_hash = os.path.basename(local_file_path).split('_')[-1].split('.')[0]
         file_name = f"{file_hash}.m4a"
         
-        # Upload the file
-        bucket.put_object_from_file(file_name, local_file_path)
+        # Check if file already exists in OSS
+        try:
+            bucket.get_object_meta(file_name)
+            print(f"File already exists in OSS: {file_name}")
+        except oss2.exceptions.NoSuchKey:
+            # File doesn't exist, upload it
+            print(f"Uploading file to OSS: {file_name}")
+            bucket.put_object_from_file(file_name, local_file_path)
         
         # Generate a signed URL that's valid for 1 hour (3600 seconds)
         file_url = bucket.sign_url('GET', file_name, 3600)
