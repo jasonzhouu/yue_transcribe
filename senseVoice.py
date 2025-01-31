@@ -46,8 +46,8 @@ def transcribe_with_timestamps(audio_url):
             task=task_response.output.task_id
         )
         
-        if transcribe_response.status_code == HTTPStatus.OK:
-            return transcribe_response.output
+        if transcribe_response.status_code == HTTPStatus.OK and transcribe_response.output.results[0].transcript_url and transcribe_response.output.results[0].subtask_status == 'SUCCEEDED':
+            return transcribe_response.output.results[0].transcript_url
         else:
             raise Exception(f"API Error: {transcribe_response.message}")
             
@@ -114,10 +114,10 @@ def process_youtube_video(youtube_url):
         print('file url:', file_url)
         
         # Transcribe with timestamps
-        transcription = transcribe_with_timestamps(file_url)
+        transcription_url = transcribe_with_timestamps(file_url)
         
         # Format the transcript
-        formatted_transcript = format_transcript(transcription)
+        formatted_transcript = format_transcript(transcription_url)
         
         # Clean up temporary audio file
         # if os.path.exists(audio_path):
