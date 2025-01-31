@@ -20,6 +20,9 @@ ssl._create_default_https_context = ssl._create_unverified_context
 load_dotenv()
 dashscope.api_key = os.getenv('ALIYUN_BAILIAN_API_KEY')
 
+# Create temp directory if it doesn't exist
+os.makedirs('temp', exist_ok=True)
+
 def get_video_hash(youtube_url):
     """Generate a hash from YouTube URL"""
     return hashlib.md5(youtube_url.encode()).hexdigest()
@@ -28,7 +31,7 @@ def download_youtube_audio(youtube_url):
     """Download audio from YouTube video"""
     # Generate hash for filename
     file_hash = get_video_hash(youtube_url)
-    output_path = f"audio_{file_hash}.m4a"
+    output_path = os.path.join('temp', f"audio_{file_hash}.m4a")
     
     # Check if file already exists
     if os.path.exists(output_path):
@@ -53,11 +56,11 @@ def download_youtube_video(youtube_url):
     """Download video with audio from YouTube"""
     # Generate hash for filename
     file_hash = get_video_hash(youtube_url)
-    output_template = f"video_{file_hash}.%(ext)s"
+    output_template = os.path.join('temp', f"video_{file_hash}.%(ext)s")
     
     # Try to find existing video file
     for ext in ['mp4', 'mkv', 'webm']:
-        existing_file = f"video_{file_hash}.{ext}"
+        existing_file = os.path.join('temp', f"video_{file_hash}.{ext}")
         if os.path.exists(existing_file):
             print(f"Video file already exists: {existing_file}")
             return existing_file
@@ -196,6 +199,9 @@ def embed_subtitles(video_path, srt_path, output_path):
 def process_youtube_video(youtube_url):
     """Process YouTube video and generate transcript"""
     try:
+        # Get hash once for consistent naming
+        file_hash = get_video_hash(youtube_url)
+        
         # Download audio from YouTube
         audio_path = download_youtube_audio(youtube_url)
         
@@ -219,23 +225,28 @@ def process_youtube_video(youtube_url):
         if not transcript_data:
             raise Exception("Failed to download transcript")
             
-        # Create SRT file
+        # Save transcript data to a JSON file using just the hash
+        transcript_path = os.path.join('temp', f'{file_hash}.json')
+        with open(transcript_path, 'w', encoding='utf-8') as f:
+            json.dump(transcript_data, f, ensure_ascii=False, indent=2)
+            
+        # Create SRT file using hash
         srt_content = create_srt_from_transcript(transcript_data)
-        srt_path = 'temp_subtitles.srt'
+        srt_path = os.path.join('temp', f'{file_hash}.srt')
         with open(srt_path, 'w', encoding='utf-8') as f:
             f.write(srt_content)
             
-        # Embed subtitles into video
-        output_path = 'output_video_with_subtitles.' + video_path.split('.')[-1]
+        # Embed subtitles into video using just the hash
+        output_path = os.path.join('temp', f'{file_hash}.{video_path.split(".")[-1]}')
         if not embed_subtitles(video_path, srt_path, output_path):
             raise Exception("Failed to embed subtitles")
             
         # Clean up temporary files
-        for temp_file in [srt_path]:
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
+        if os.path.exists(srt_path):
+            os.remove(srt_path)
                 
         print(f"Video with subtitles saved as: {output_path}")
+        print(f"Transcript saved as: {transcript_path}")
         return transcript_data
         
     except Exception as e:
