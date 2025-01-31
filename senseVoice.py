@@ -33,7 +33,7 @@ def transcribe_with_timestamps(audio_url):
         task_response = dashscope.audio.asr.Transcription.async_call(
             model='sensevoice-v1',
             file_urls=[audio_url],
-            language_hints=['yue'],  # Cantonese
+            language_hints=[os.getenv('TRANSCRIPTION_LANGUAGE', 'yue')],  # Default to Cantonese if not set
         )
         
         # Wait for transcription to complete

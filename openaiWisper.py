@@ -24,7 +24,7 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 16000
 CHUNK = 1024
-SILENCE_THRESHOLD = 100  # 降低静音阈值，使其更容易捕获声音
+SILENCE_THRESHOLD = 200  # 降低静音阈值，使其更容易捕获声音
 MIN_AUDIO_LENGTH = 5  # 最少需要收集的音频块数量
 
 # 创建线程安全队列
@@ -60,9 +60,11 @@ def record_audio():
                 silence_count = 0
             else:
                 silence_count += 1
+                print(f"Silence count: {silence_count}", end='\r')
             
             # 当收集到足够的音频数据或检测到语音停顿时处理
-            if len(frames) >= MIN_AUDIO_LENGTH and (len(frames) >= 20 or silence_count > 3):
+            if len(frames) >= MIN_AUDIO_LENGTH and silence_count > 2:  # Reduced from 3 to 2, removed len(frames) >= 20
+                print(f"\nProcessing audio chunk with {len(frames)} frames after {silence_count} silent chunks")
                 if frames:
                     audio_queue.put(b''.join(frames))
                 frames = []
@@ -85,12 +87,12 @@ def transcribe_and_translate():
                 # Whisper 语音识别
                 result = model.transcribe(
                     audio_np,
-                    language="zh",
+                    language=os.getenv('TRANSCRIPTION_LANGUAGE', 'yue'),
                     fp16=False
                 )
 
                 print('==',result["text"].strip())
-                
+
                 if result["text"].strip():  # 只处理非空文本
                     # 使用 Qwen AI 进行方言转换
                     response = client.chat.completions.create(
