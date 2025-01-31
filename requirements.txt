@@ -7,3 +7,4 @@ sensevoice-onnx
 yt-dlp
 dashscope>=1.10.0
 oss2
+SpeechRecognition
