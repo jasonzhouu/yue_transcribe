@@ -71,11 +71,9 @@ def download_youtube_video(youtube_url, file_hash):
         video_path = ydl.prepare_filename(info)
     return video_path
 
-def transcribe_with_timestamps(audio_url):
+def transcribe_with_timestamps(audio_url, file_hash):
     """Transcribe audio with timing information using DashScope"""
     try:
-        # Extract hash from audio_url (which contains the hash in the filename)
-        file_hash = os.path.basename(audio_url).split('.')[0]
         transcript_file = os.path.join('temp', f'{file_hash}_transcript_raw.json')
         
         # Check if transcript file already exists
@@ -245,7 +243,7 @@ def process_youtube_video(youtube_url):
         print('audio oss url:', audio_oss_url)
         
         # Transcribe with timestamps
-        transcription_file = transcribe_with_timestamps(audio_oss_url)
+        transcription_file = transcribe_with_timestamps(audio_oss_url, file_hash)
         if not transcription_file:
             raise Exception("Failed to get transcription file")
             
